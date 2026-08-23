@@ -185,3 +185,50 @@ treated as **untrusted**: it is provenance-wrapped, secret-scrubbed, and
 length-bounded before entering context. Access to `mcp_resources` / `mcp_prompts`
 and to specific servers is governed by your agent's tool access policy (risk
 profile), and narrows correctly when delegating to subagents.
+
+## Example: Build Remote Agent (`gbr`)
+
+[Build Remote Agent](https://grokbuildremote.com/) is a pairing device: a phone
+app spectates (and can inject into) this ZeroClaw host through free MIT
+`gbr-agent`. Protocol `gbr/1`. Independent product by Linespotting AB. Not
+affiliated with xAI or SpaceX.
+
+Run `gbr-agent` on the **host**. Do not copy it into a sandbox. Attach only
+loopback Bot API `http://127.0.0.1:8788` or stdio `gbr-mcp`. Phone is spectator
++ veto. Never put mailbox keys in ZeroClaw config. ZeroClaw chat channels are
+not `gbr/1`.
+
+Omission of `mcp_bundles` is not a grant — define the server **and** grant it:
+
+```bash
+curl -fsSL https://grokbuildremote.com/install.sh | bash
+gbr-agent version    # need v0.6.0+
+gbr-agent pair && gbr-agent run
+
+git clone https://github.com/LinespottingOrg/GrokBuildRemote-Agents.git
+cd GrokBuildRemote-Agents/mcp/gbr-mcp && npm install
+node bin/gbr-mcp.js --diagnose
+```
+
+```toml
+[[mcp.servers]]
+name = "gbr"
+command = "node"
+args = ["/absolute/path/to/GrokBuildRemote-Agents/mcp/gbr-mcp/bin/gbr-mcp.js"]
+
+[mcp_bundles.gbr]
+servers = ["gbr"]
+
+[agents.assistant]
+mcp_bundles = ["gbr"]
+```
+
+Restart the affected session after changing bundles. HTTP without MCP, after
+`gbr-agent run`:
+
+```bash
+curl -sS http://127.0.0.1:8788/health
+curl -sS http://127.0.0.1:8788/v1/sessions
+```
+
+Docs: https://github.com/LinespottingOrg/GrokBuildRemote-Agents/blob/main/docs/BOT-API.md
