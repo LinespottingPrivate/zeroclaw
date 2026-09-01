@@ -195,18 +195,44 @@ affiliated with xAI or SpaceX.
 
 Run `gbr-agent` on the **host**. Do not copy it into a sandbox. Attach only
 loopback Bot API `http://127.0.0.1:8788` or stdio `gbr-mcp`. Phone is spectator
-+ veto. Never put mailbox keys in ZeroClaw config. ZeroClaw chat channels are
+and veto. Never put mailbox keys in ZeroClaw config. ZeroClaw chat channels are
 not `gbr/1`.
 
-Omission of `mcp_bundles` is not a grant — define the server **and** grant it:
+Loopback limits *network* exposure. It is **not** process authentication.
+Another local process can call `:8788` unless you set `GBR_BOT_REQUIRE_KEY=1`
+and give `gbr-mcp` the matching mailbox key through ZeroClaw secret-managed
+MCP `env` (not a plaintext mailbox key in `config.toml`).
+
+`gbr-mcp` logs tool-call arguments to `~/.gbr/logs/gbr-mcp-YYYY-MM-DD.jsonl`
+at info, default retention 7 days. Secret redaction does not strip ordinary
+inject text. For the safe baseline set `GBR_MCP_LOG_BODIES=0`. Delete or
+disable those logs if you do not want a second persistence surface outside
+ZeroClaw history.
+
+Omission of `mcp_bundles` is not a grant: define the server **and** grant it.
+
+Need **Node.js 20+** (`mcp/gbr-mcp` `engines.node >=20`). Pin GitHub Release
+**v0.6.2** (checksum the installer, then the binary). Do not paste live
+website `curl | bash`. See
+[PINNED-INSTALL.md](https://github.com/LinespottingOrg/GrokBuildRemote-Agents/blob/v0.6.2/docs/PINNED-INSTALL.md).
+
+Terminal 1 (leave this process running):
 
 ```bash
-curl -fsSL https://grokbuildremote.com/install.sh | bash
-gbr-agent version    # need v0.6.0+
-gbr-agent pair && gbr-agent run
+gbr-agent version    # need v0.6.2
+export GBR_BOT_REQUIRE_KEY=1
+gbr-agent pair
+gbr-agent run
+```
 
-git clone https://github.com/LinespottingOrg/GrokBuildRemote-Agents.git
-cd GrokBuildRemote-Agents/mcp/gbr-mcp && npm install
+Terminal 2 (MCP install and diagnose; `gbr-agent run` must already be up):
+
+```bash
+git clone --branch v0.6.2 --depth 1 https://github.com/LinespottingOrg/GrokBuildRemote-Agents.git
+cd GrokBuildRemote-Agents/mcp/gbr-mcp
+node -v    # v20+
+npm install
+export GBR_MCP_LOG_BODIES=0
 node bin/gbr-mcp.js --diagnose
 ```
 
@@ -215,6 +241,8 @@ node bin/gbr-mcp.js --diagnose
 name = "gbr"
 command = "node"
 args = ["/absolute/path/to/GrokBuildRemote-Agents/mcp/gbr-mcp/bin/gbr-mcp.js"]
+# Put the mailbox key in ZeroClaw secret-managed MCP env, not in this file.
+# env = { GBR_BOT_KEY = "<secret-ref>", GBR_MCP_LOG_BODIES = "0" }
 
 [mcp_bundles.gbr]
 servers = ["gbr"]
@@ -224,11 +252,11 @@ mcp_bundles = ["gbr"]
 ```
 
 Restart the affected session after changing bundles. HTTP without MCP, after
-`gbr-agent run`:
+`gbr-agent run` with `GBR_BOT_REQUIRE_KEY=1`:
 
 ```bash
-curl -sS http://127.0.0.1:8788/health
-curl -sS http://127.0.0.1:8788/v1/sessions
+curl -sS -H "X-GBR-Key: $GBR_BOT_KEY" http://127.0.0.1:8788/health
+curl -sS -H "X-GBR-Key: $GBR_BOT_KEY" http://127.0.0.1:8788/v1/sessions
 ```
 
-Docs: https://github.com/LinespottingOrg/GrokBuildRemote-Agents/blob/main/docs/BOT-API.md
+Docs: [BOT-API.md](https://github.com/LinespottingOrg/GrokBuildRemote-Agents/blob/v0.6.2/docs/BOT-API.md)
