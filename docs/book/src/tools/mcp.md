@@ -242,7 +242,7 @@ name = "gbr"
 command = "node"
 args = ["/absolute/path/to/GrokBuildRemote-Agents/mcp/gbr-mcp/bin/gbr-mcp.js"]
 # Put the mailbox key in ZeroClaw secret-managed MCP env, not in this file.
-# env = { GBR_BOT_KEY = "<secret-ref>", GBR_MCP_LOG_BODIES = "0" }
+# env = { GBR_MAILBOX_KEY = "<secret-ref>", GBR_MCP_LOG_BODIES = "0" }
 
 [mcp_bundles.gbr]
 servers = ["gbr"]
@@ -255,8 +255,8 @@ Restart the affected session after changing bundles. HTTP without MCP, after
 `gbr-agent run` with `GBR_BOT_REQUIRE_KEY=1`:
 
 ```bash
-curl -sS -H "X-GBR-Key: $GBR_BOT_KEY" http://127.0.0.1:8788/health
-curl -sS -H "X-GBR-Key: $GBR_BOT_KEY" http://127.0.0.1:8788/v1/sessions
+curl -sS -H "X-GBR-Key: $GBR_MAILBOX_KEY" http://127.0.0.1:8788/health
+curl -sS -H "X-GBR-Key: $GBR_MAILBOX_KEY" http://127.0.0.1:8788/v1/sessions
 ```
 
 Docs: [BOT-API.md](https://github.com/LinespottingOrg/GrokBuildRemote-Agents/blob/v0.6.2/docs/BOT-API.md)
