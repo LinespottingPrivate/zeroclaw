@@ -195,8 +195,8 @@ affiliated with xAI or SpaceX.
 
 Run `gbr-agent` on the **host**. Do not copy it into a sandbox. Attach only
 loopback Bot API `http://127.0.0.1:8788` or stdio `gbr-mcp`. Phone is spectator
-and veto. Never put mailbox keys in ZeroClaw config. ZeroClaw chat channels are
-not `gbr/1`.
+and veto. Never paste mailbox keys as plaintext in `config.toml`. ZeroClaw chat
+channels are not `gbr/1`.
 
 Loopback limits *network* exposure. It is **not** process authentication.
 Another local process can call `:8788` unless you set `GBR_BOT_REQUIRE_KEY=1`
@@ -205,9 +205,9 @@ MCP `env` (not a plaintext mailbox key in `config.toml`).
 
 `gbr-mcp` logs tool-call arguments to `~/.gbr/logs/gbr-mcp-YYYY-MM-DD.jsonl`
 at info, default retention 7 days. Secret redaction does not strip ordinary
-inject text. For the safe baseline set `GBR_MCP_LOG_BODIES=0`. Delete or
-disable those logs if you do not want a second persistence surface outside
-ZeroClaw history.
+inject text. For the safe baseline set `GBR_MCP_LOG_BODIES=0` on the `gbr`
+server `env` in ZeroCode Config. Delete or disable those logs if you do not
+want a second persistence surface outside ZeroClaw history.
 
 Omission of `mcp_bundles` is not a grant: define the server **and** grant it.
 
@@ -225,24 +225,34 @@ gbr-agent pair
 gbr-agent run
 ```
 
-Terminal 2 (MCP install and diagnose; `gbr-agent run` must already be up):
+After pairing, obtain the mailbox key from the phone (Settings -> Bot API) or
+from the host pairing file `~/.gbr/device.json` (`mailbox_key`). The pinned
+`gbr-mcp` client reads `GBR_MAILBOX_KEY` from its options or process
+environment; it does not load that pairing file. With `GBR_BOT_REQUIRE_KEY=1`,
+a fresh shell that omits the key makes unauthorized Bot API requests.
+
+Terminal 2 (MCP install and diagnose; `gbr-agent run` must already be up).
+Paste the key into a silent prompt so the value is not stored in shell history:
 
 ```bash
 git clone --branch v0.6.2 --depth 1 https://github.com/LinespottingOrg/GrokBuildRemote-Agents.git
 cd GrokBuildRemote-Agents/mcp/gbr-mcp
 node -v    # v20+
 npm install
+IFS= read -rs GBR_MAILBOX_KEY   # paste key, Enter; no echo, no history
+export GBR_MAILBOX_KEY
 export GBR_MCP_LOG_BODIES=0
 node bin/gbr-mcp.js --diagnose
 ```
+
+The `export` lines above apply only to this diagnostic shell. They do not
+configure the ZeroClaw-spawned `gbr` server. Define the server and grant it:
 
 ```toml
 [[mcp.servers]]
 name = "gbr"
 command = "node"
 args = ["/absolute/path/to/GrokBuildRemote-Agents/mcp/gbr-mcp/bin/gbr-mcp.js"]
-# Put the mailbox key in ZeroClaw secret-managed MCP env, not in this file.
-# env = { GBR_MAILBOX_KEY = "<secret-ref>", GBR_MCP_LOG_BODIES = "0" }
 
 [mcp_bundles.gbr]
 servers = ["gbr"]
@@ -251,10 +261,23 @@ servers = ["gbr"]
 mcp_bundles = ["gbr"]
 ```
 
-Restart the affected session after changing bundles. HTTP without MCP, after
-`gbr-agent run` with `GBR_BOT_REQUIRE_KEY=1`:
+Then set both `GBR_MAILBOX_KEY` and `GBR_MCP_LOG_BODIES=0` on that server's
+`env` through ZeroCode Config (`/config` -> `mcp.servers` -> `gbr` -> `env`).
+The mailbox key is a secret field: use the masked prompt (encrypted secrets
+store) or a 1Password `op://vault/item/field` reference. Do not put the raw
+key in `config.toml`. The CLI equivalent is:
+
+```sh
+zeroclaw config set mcp.servers.gbr.env.GBR_MAILBOX_KEY
+zeroclaw config set mcp.servers.gbr.env.GBR_MCP_LOG_BODIES 0
+```
+
+Restart the affected session after changing bundles or `env`. HTTP without MCP,
+after `gbr-agent run` with `GBR_BOT_REQUIRE_KEY=1`:
 
 ```bash
+IFS= read -rs GBR_MAILBOX_KEY
+export GBR_MAILBOX_KEY
 curl -sS -H "X-GBR-Key: $GBR_MAILBOX_KEY" http://127.0.0.1:8788/health
 curl -sS -H "X-GBR-Key: $GBR_MAILBOX_KEY" http://127.0.0.1:8788/v1/sessions
 ```
