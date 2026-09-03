@@ -272,6 +272,9 @@ zeroclaw config set mcp.servers.gbr.env.GBR_MAILBOX_KEY
 zeroclaw config set mcp.servers.gbr.env.GBR_MCP_LOG_BODIES 0
 ```
 
+All MCP environment values use ZeroClaw's masked secret prompt, so the
+trailing `0` is not consumed as the value. Enter `0` at that prompt.
+
 Restart the affected session after changing bundles or `env`. HTTP without MCP,
 after `gbr-agent run` with `GBR_BOT_REQUIRE_KEY=1`:
 
