@@ -238,12 +238,14 @@ Paste the key into a silent prompt so the value is not stored in shell history:
 git clone --branch v0.6.2 --depth 1 https://github.com/LinespottingOrg/GrokBuildRemote-Agents.git
 cd GrokBuildRemote-Agents/mcp/gbr-mcp
 node -v    # v20+
-npm install
+npm install --ignore-scripts
 IFS= read -rs GBR_MAILBOX_KEY   # paste key, Enter; no echo, no history
 export GBR_MAILBOX_KEY
 export GBR_MCP_LOG_BODIES=0
 node bin/gbr-mcp.js --diagnose
 ```
+
+The source tag is pinned, but this release has no npm lockfile, so dependency versions are resolved at install time. `--ignore-scripts` prevents dependency lifecycle scripts from running during installation; it does not make the downloaded dependencies trusted or prevent their code from running when the MCP server starts.
 
 The `export` lines above apply only to this diagnostic shell. They do not
 configure the ZeroClaw-spawned `gbr` server. Define the server and grant it:
